@@ -1,0 +1,87 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:{source_attribute}-{source_value}-{target_attribute}-{target_value}",
+ "creation": "2026-04-26 22:10:06.806152",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "attribute_mapping_section",
+  "source_attribute",
+  "source_value",
+  "column_break_kbok",
+  "target_attribute",
+  "target_value"
+ ],
+ "fields": [
+  {
+   "fieldname": "attribute_mapping_section",
+   "fieldtype": "Section Break",
+   "label": "Attribute Mapping"
+  },
+  {
+   "fieldname": "source_attribute",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Source Attribute",
+   "options": "Item Attribute",
+   "reqd": 1
+  },
+  {
+   "fieldname": "source_value",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Source Value",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_kbok",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "target_attribute",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Target Attribute",
+   "options": "Item Attribute",
+   "reqd": 1
+  },
+  {
+   "fieldname": "target_value",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Target Value",
+   "reqd": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-04-26 22:24:21.798853",
+ "modified_by": "Administrator",
+ "module": "Template Bom Exploder",
+ "name": "BOM Attribute Compatibility",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Manufacturing Manager",
+   "select": 1,
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
