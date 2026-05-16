@@ -1,0 +1,25 @@
+{
+ "creation": "2024-01-01 00:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Page",
+ "modified": "2024-01-01 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Template Bom Exploder",
+ "name": "template-bom-exploder",
+ "owner": "Administrator",
+ "page_name": "template-bom-exploder",
+ "restrict_to_domain": "",
+ "roles": [
+  {
+   "role": "Manufacturing User"
+  },
+  {
+   "role": "Manufacturing Manager"
+  },
+  {
+   "role": "System Manager"
+  }
+ ],
+ "system_page": 0,
+ "title": "Template BOM Exploder"
+}

@@ -5,6 +5,11 @@ app_description = "Recursively generates variant BOMs from a template BOM"
 app_email = "wouldyukindly@gmail.com"
 app_license = "gpl-3.0"
 
+
+doctype_js = {
+    "BOM": "public/js/bom.js"
+}
+
 # Apps
 # ------------------
 

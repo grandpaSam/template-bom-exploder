@@ -127,7 +127,7 @@ def resolve_bom_tree(bom_items, target_attributes, get_item_fn, get_variant_attr
 
 		# Case 3: not a template item, use as-is
 		if not item.get('variant_of') and not item.get('has_variants'):
-			resolved_items.append({**bom_item, 'resolved_item_code': item_code})
+			resolved_items.append({**bom_item, 'resolved_item_code': item_code, 'resolved_item_name': item.get('item_name') or item_code})
 			continue
 
 		# Circular reference guard
@@ -162,7 +162,17 @@ def resolve_bom_tree(bom_items, target_attributes, get_item_fn, get_variant_attr
 			continue
 
 		resolved_item_code = result['item_code']
+		resolved_item = get_item_fn(resolved_item_code)
+		resolved_item_name = resolved_item.get('item_name') or resolved_item_code
 
+		# Respect "Do Not Explode" — treat as a leaf even if a sub-BOM exists
+		if bom_item.get('do_not_explode'):
+			resolved_items.append({
+				**bom_item,
+				'resolved_item_code': resolved_item_code,
+				'resolved_item_name': resolved_item_name,
+			})
+			continue
 		# Recurse into sub-assembly if it has its own BOM
 		sub_bom = get_template_bom_fn(resolved_item_code)
 		if not sub_bom:
@@ -197,12 +207,14 @@ def resolve_bom_tree(bom_items, target_attributes, get_item_fn, get_variant_attr
 			resolved_items.append({
 				**bom_item,
 				'resolved_item_code': resolved_item_code,
+				'resolved_item_name': resolved_item_name,
 				'children': sub_bom_items_result['resolved_items']
 			})
 		else:
 			resolved_items.append({
 				**bom_item,
-				'resolved_item_code': resolved_item_code
+				'resolved_item_code': resolved_item_code,
+				'resolved_item_name': resolved_item_name,
 			})
 
 		visited.discard(item_code)

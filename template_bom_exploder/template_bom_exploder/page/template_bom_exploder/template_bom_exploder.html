@@ -1,0 +1,86 @@
+<div class="tbe-page">
+
+    <!-- Header -->
+    <div class="tbe-header">
+        <div class="tbe-header-left">
+            <h1 class="tbe-title">
+                <span class="tbe-title-name">—</span>
+                <span class="tbe-title-code"></span>
+            </h1>
+            <p class="tbe-subtitle"></p>
+        </div>
+        <div class="tbe-summary" style="display:none;">
+            <div class="tbe-pill tbe-pill--total">
+                <span class="tbe-pill-count tbe-total-count">0</span>
+                <span class="tbe-pill-label">Total</span>
+            </div>
+            <div class="tbe-pill tbe-pill--ok">
+                <span class="tbe-pill-count tbe-ok-count">0</span>
+                <span class="tbe-pill-label">OK</span>
+            </div>
+            <div class="tbe-pill tbe-pill--failed">
+                <span class="tbe-pill-count tbe-failed-count">0</span>
+                <span class="tbe-pill-label">Failed</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Variant selector -->
+    <div class="tbe-controls" style="display:none;">
+        <div class="tbe-select-wrap">
+            <label class="tbe-select-label">Variant</label>
+            <select class="tbe-variant-select form-control"></select>
+        </div>
+		<div class="tbe-overwrite-wrap">
+           <label class="tbe-overwrite-label">
+               <input type="checkbox" class="tbe-overwrite-checkbox">
+               Overwrite existing BOMs
+           </label>
+       </div>
+
+    </div>
+
+    <!-- Loading state -->
+    <div class="tbe-loading">
+        <div class="tbe-spinner"></div>
+        <p>Running dry-run resolver…</p>
+    </div>
+
+    <!-- Error banner (fatal — e.g. no variants found) -->
+    <div class="tbe-fatal-error" style="display:none;">
+        <span class="tbe-fatal-icon">⚠</span>
+        <span class="tbe-fatal-message"></span>
+    </div>
+
+    <!-- Tree panel -->
+    <div class="tbe-tree-panel" style="display:none;">
+        <!-- Variant error state -->
+        <div class="tbe-variant-error" style="display:none;">
+            <div class="tbe-error-card">
+                <div class="tbe-error-card-title">Resolution Failed</div>
+                <div class="tbe-error-card-item"></div>
+                <div class="tbe-error-card-reason"></div>
+                <div class="tbe-error-card-candidates" style="display:none;">
+                    <span class="tbe-error-card-candidates-label">Candidates:</span>
+                    <span class="tbe-error-card-candidates-list"></span>
+                </div>
+            </div>
+        </div>
+        <!-- Tree -->
+        <ul class="tbe-tree tbe-tree--root"></ul>
+    </div>
+
+    <!-- Footer action bar -->
+    <div class="tbe-footer" style="display:none;">
+        <button class="btn btn-default tbe-btn-cancel">Cancel</button>
+        <div class="tbe-footer-right">
+            <button class="btn btn-primary tbe-btn-confirm-selected" disabled>
+                Confirm Selected
+            </button>
+            <button class="btn btn-success tbe-btn-confirm-all" disabled>
+                Confirm All
+            </button>
+        </div>
+    </div>
+
+</div>

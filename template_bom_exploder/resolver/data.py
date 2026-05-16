@@ -6,7 +6,7 @@ def get_bom_items(bom_name):
 	return frappe.get_all(
 		'BOM Item',
 		filters={'parent': bom_name, 'parenttype': 'BOM'},
-		fields=['item_code', 'item_name', 'qty', 'uom'],
+		fields=['item_code', 'item_name', 'qty', 'uom', 'do_not_explode'],
 		order_by='idx asc'
 	)
 
@@ -31,7 +31,7 @@ def get_item(item_code):
 	return frappe.db.get_value(
 		'Item',
 		item_code,
-		['item_code', 'variant_of', 'has_variants'],
+		['item_code', 'item_name', 'variant_of', 'has_variants'],
 		as_dict=True
 	)
 
