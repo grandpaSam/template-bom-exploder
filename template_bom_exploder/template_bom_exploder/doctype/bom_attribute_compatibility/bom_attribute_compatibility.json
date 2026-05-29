@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "allow_rename": 1,
  "autoname": "format:{source_attribute}-{source_value}-{target_attribute}-{target_value}",
  "creation": "2026-04-26 22:10:06.806152",
@@ -57,7 +58,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-26 22:24:21.798853",
+ "modified": "2026-05-29 09:13:36.229197",
  "modified_by": "Administrator",
  "module": "Template Bom Exploder",
  "name": "BOM Attribute Compatibility",
