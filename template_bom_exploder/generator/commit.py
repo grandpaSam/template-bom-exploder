@@ -316,11 +316,9 @@ def _build_bom_doc(template_bom_name, resolved_item_code, resolved_item_name, ch
 	# Work Order / MRP time — we do not recurse into grandchildren here.
 	for child in children:
 		new_doc.append('items', {
-			'item_code': child['resolved_item_code'] or child['item_code'],
-			'item_name': child.get('resolved_item_name') or child['resolved_item_code'],
-			'qty':       child['qty'],
-			'uom':       child.get('uom') or 'Nos',
+			**child,
+			'item_code': child.get('resolved_item_code') or child['item_code'],
+			'item_name': child.get('resolved_item_name') or child.get('item_name') or child['item_code'],
 		})
-
 	return new_doc
 
