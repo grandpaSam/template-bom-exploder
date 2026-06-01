@@ -5,15 +5,20 @@ frappe.pages["template-bom-exploder"].on_page_load = function (wrapper) {
 		single_column: true,
 	});
 
-	// Render the static HTML template into the page body
 	$(frappe.render_template("template_bom_exploder", {})).appendTo(page.body);
-
-	// Inject styles
 	frappe.dom.set_style(TBE_STYLES);
 
-	// Bootstrap the controller
-	const ctrl = new TemplateBomExploderPage(page);
-	ctrl.init();
+	wrapper.page_obj = new TemplateBomExploderPage(page);
+};
+
+frappe.pages["template-bom-exploder"].on_page_show = function (wrapper) {
+	// route_options is cleared by Frappe before on_page_show fires.
+	// Read the BOM name directly from the route instead.
+	const route = frappe.get_route();
+	// route = ['template-bom-exploder', 'BOM-NAME'] if passed as segment
+	// Fall back to wrapper.current_bom if set by bom.js via a different mechanism
+	const bom_name = route[1] || wrapper.current_bom || null;
+	wrapper.page_obj.init(bom_name);
 };
 
 // ---------------------------------------------------------------------------
@@ -39,11 +44,21 @@ class TemplateBomExploderPage {
 		this.report = null; // full dry-run report dict
 		this.bom_name = null;
 	}
+	init(bom_name) {
+		this.report = null;
 
-	init() {
-		// Read BOM name from route: /app/template-bom-exploder/BOM-XXXX-001
-		const route = frappe.get_route();
-		this.bom_name = route[1] || null;
+		this.$loading.show();
+		this.$fatal.hide();
+		this.$summary.hide();
+		this.$controls.hide();
+		this.$treePanel.hide();
+		this.$footer.hide();
+		this.$select.empty();
+		this.$treePanel.find(".tbe-tree--root").empty();
+
+		if (bom_name) {
+			this.bom_name = bom_name;
+		}
 
 		if (!this.bom_name) {
 			this._showFatal("No BOM name provided. Open this page from the BOM Actions menu.");
@@ -54,7 +69,6 @@ class TemplateBomExploderPage {
 		this._bindButtons();
 		this._runDryRun();
 	}
-
 	// -----------------------------------------------------------------------
 	// Data
 	// -----------------------------------------------------------------------
