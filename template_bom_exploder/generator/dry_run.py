@@ -138,7 +138,7 @@ def _hydrate_bom_items(bom_items, get_bom_items_fn, get_template_bom_fn, get_ite
 	hydrated = []
 	for bom_item in bom_items:
 		item_code = bom_item['item_code']
-		if bom_item.get('do_not_explode'):
+		if bom_item.get('custom_do_not_explode_for_template'):
 			hydrated.append({**bom_item, 'children': []})
 			continue
 		item = get_item_fn(item_code)

@@ -166,7 +166,7 @@ def resolve_bom_tree(bom_items, target_attributes, get_item_fn, get_variant_attr
 		resolved_item_name = resolved_item.get('item_name') or resolved_item_code
 
 		# Respect "Do Not Explode" — treat as a leaf even if a sub-BOM exists
-		if bom_item.get('do_not_explode'):
+		if bom_item.get('custom_do_not_explode_for_template'):
 			resolved_items.append({
 				**bom_item,
 				'resolved_item_code': resolved_item_code,

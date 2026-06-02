@@ -201,7 +201,7 @@ def _commit_sub_assembly_bom(node, overwrite, can_submit):
 		can_submit:  whether the current user has BOM submit permission
 	"""
 
-	if node.get('do_not_explode'):
+	if node.get('custom_do_not_explode_for_template'):
 		return
 	# --- Recurse into children first (depth-first) ---
 	# This ensures the deepest sub-assemblies are created before their parents.

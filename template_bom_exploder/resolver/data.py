@@ -6,7 +6,7 @@ def get_bom_items(bom_name):
 	return frappe.get_all(
 		'BOM Item',
 		filters={'parent': bom_name, 'parenttype': 'BOM'},
-		fields=['item_code', 'item_name', 'qty', 'uom', 'do_not_explode'],
+		fields=['item_code', 'item_name', 'qty', 'uom', 'custom_do_not_explode_for_template'],
 		order_by='idx asc'
 	)
 

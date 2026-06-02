@@ -10,6 +10,13 @@ doctype_js = {
     "BOM": "public/js/bom.js"
 }
 
+fixtures = [
+    {
+        "dt": "Custom Field",
+        "filters": [["module", "=", "Template Bom Exploder"]]
+    }
+]
+
 # Apps
 # ------------------
 
