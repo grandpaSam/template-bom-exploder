@@ -2,7 +2,7 @@
  {
   "alignment": "",
   "allow_in_quick_entry": 0,
-  "allow_on_submit": 0,
+  "allow_on_submit": 1,
   "bold": 0,
   "button_color": "",
   "collapsible": 0,
@@ -35,7 +35,7 @@
   "length": 0,
   "link_filters": null,
   "mandatory_depends_on": null,
-  "modified": "2026-06-02 10:46:26.196417",
+  "modified": "2026-06-02 21:25:45.478876",
   "module": "Template Bom Exploder",
   "name": "BOM Item-custom_do_not_explode_for_template",
   "no_copy": 0,
