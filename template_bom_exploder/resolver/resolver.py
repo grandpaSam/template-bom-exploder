@@ -1,3 +1,6 @@
+from template_bom_exploder.resolver.exceptions import apply_exceptions
+
+
 def resolve_item(template_item_code, target_attributes, item_variant_attributes, compatibility_map, existing_variants):
 	"""
 	Resolves a template item to a concrete variant given a set of target attributes.
@@ -10,7 +13,7 @@ def resolve_item(template_item_code, target_attributes, item_variant_attributes,
 		existing_variants: list of variant dicts from data.get_existing_variants()
 
 	Returns:
-		{'status': 'resolved', 'item_code': '...'}
+		{'status': 'resolved', 'item_code': '...', 'resolved_attributes': {...}}
 		{'status': 'unresolvable', 'reason': '...'}
 		{'status': 'ambiguous', 'candidates': [...]}
 	"""
@@ -30,8 +33,6 @@ def resolve_item(template_item_code, target_attributes, item_variant_attributes,
 				continue
 			if target_attributes[target_attr] != target_val:
 				continue
-			# This mapping's target matches our parent context.
-			# Check if any source in this mapping matches our current attribute
 			for source in sources:
 				if source['source_attribute'] == attribute:
 					matched_sources.append(source['source_value'])
@@ -82,11 +83,22 @@ def resolve_item(template_item_code, target_attributes, item_variant_attributes,
 
 	return {
 		'status': 'resolved',
-		'item_code': matching_variants[0]
+		'item_code': matching_variants[0],
+		'resolved_attributes': resolved_attributes,  # expose for exception enrichment
 	}
 
 
-def resolve_bom_tree(bom_items, target_attributes, get_item_fn, get_variant_attributes_fn, get_existing_variants_fn, get_template_bom_fn, compatibility_map, visited=None):
+def resolve_bom_tree(
+	bom_items,
+	target_attributes,
+	get_item_fn,
+	get_variant_attributes_fn,
+	get_existing_variants_fn,
+	get_template_bom_fn,
+	compatibility_map,
+	visited=None,
+	template_bom_name=None,
+):
 	"""
 	Recursively resolves a list of BOM items to concrete variant item codes.
 
@@ -99,17 +111,20 @@ def resolve_bom_tree(bom_items, target_attributes, get_item_fn, get_variant_attr
 	represent the root variant being built (e.g. {'Caliber-ASR': '9mm', 'Color-ASR': 'Black'}).
 	Sub-assemblies use only the attributes relevant to them and ignore the rest.
 
+	As items are resolved, any compatibility-mapped attribute values (e.g. 'Caliber - ASR Lower'
+	resolved from 'Caliber-ASR') are accumulated into enriched_attributes. This enriched dict
+	is passed to apply_exceptions so exception matching can use both original and mapped names.
+
 	Args:
 		bom_items: list of BOM item dicts from the parent BOM (each has at minimum 'item_code')
 		target_attributes: dict of attribute->value representing the root variant being built
-		                   (e.g. {'Caliber-ASR': '9mm', 'Color-ASR': 'Black'})
 		get_item_fn: callable(item_code) -> dict with keys 'item_code', 'variant_of', 'has_variants'
 		get_variant_attributes_fn: callable(template_item_code) -> list of attribute names
 		get_existing_variants_fn: callable(template_item_code) -> list of variant dicts
-		                          each with keys 'item_code' and 'attributes' (dict)
 		get_template_bom_fn: callable(item_code) -> bom_name or None
 		compatibility_map: the full compatibility map from data.get_compatibility_mappings()
 		visited: set of already-visited item codes and BOM names used for circular reference detection
+		template_bom_name: the template BOM name for this level, used to look up exceptions.
 
 	Returns:
 		{'status': 'ok', 'resolved_items': [...]}
@@ -121,11 +136,17 @@ def resolve_bom_tree(bom_items, target_attributes, get_item_fn, get_variant_attr
 	resolved_items = []
 	errors = []
 
+	# Accumulate compatibility-resolved attributes as we walk this level.
+	# Starts as a copy of target_attributes and grows with any mapped values
+	# discovered during item resolution (e.g. 'Caliber - ASR Lower' mapped
+	# from 'Caliber-ASR'). Passed to apply_exceptions at the end of this level.
+	enriched_attributes = dict(target_attributes)
+
 	for bom_item in bom_items:
 		item_code = bom_item['item_code']
 		item = get_item_fn(item_code)
 
-		# Case 3: not a template item, use as-is
+		# Case: not a template item, use as-is
 		if not item.get('variant_of') and not item.get('has_variants'):
 			resolved_items.append({**bom_item, 'resolved_item_code': item_code, 'resolved_item_name': item.get('item_name') or item_code})
 			continue
@@ -161,6 +182,10 @@ def resolve_bom_tree(bom_items, target_attributes, get_item_fn, get_variant_attr
 			})
 			continue
 
+		# Merge any compatibility-resolved attributes into enriched_attributes
+		# so exception matching can use mapped attribute names and values
+		enriched_attributes.update(result.get('resolved_attributes', {}))
+
 		resolved_item_code = result['item_code']
 		resolved_item = get_item_fn(resolved_item_code)
 		resolved_item_name = resolved_item.get('item_name') or resolved_item_code
@@ -173,10 +198,10 @@ def resolve_bom_tree(bom_items, target_attributes, get_item_fn, get_variant_attr
 				'resolved_item_name': resolved_item_name,
 			})
 			continue
+
 		# Recurse into sub-assembly if it has its own BOM
 		sub_bom = get_template_bom_fn(resolved_item_code)
 		if not sub_bom:
-			# Try the template item's BOM as fallback
 			sub_bom = get_template_bom_fn(template_item)
 
 		if sub_bom:
@@ -197,7 +222,8 @@ def resolve_bom_tree(bom_items, target_attributes, get_item_fn, get_variant_attr
 				get_existing_variants_fn,
 				get_template_bom_fn,
 				compatibility_map,
-				visited
+				visited,
+				template_bom_name=sub_bom,
 			)
 
 			if sub_bom_items_result['status'] == 'failed':
@@ -221,5 +247,11 @@ def resolve_bom_tree(bom_items, target_attributes, get_item_fn, get_variant_attr
 
 	if errors:
 		return {'status': 'failed', 'errors': errors}
+
+	# Apply exceptions for this BOM level before returning.
+	# Use enriched_attributes so both original and compatibility-mapped
+	# attribute names/values are available for matching.
+	if template_bom_name:
+		resolved_items = apply_exceptions(resolved_items, enriched_attributes, template_bom_name)
 
 	return {'status': 'ok', 'resolved_items': resolved_items}

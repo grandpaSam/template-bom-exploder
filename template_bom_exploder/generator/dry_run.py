@@ -1,16 +1,14 @@
-# generator/dry_run.py
-
 import frappe
 from template_bom_exploder.resolver.resolver import resolve_bom_tree
 
 def run_dry_run(
-	template_bom_name,
-	get_bom_items_fn,
-	get_template_bom_fn,
-	get_item_fn,
-	get_variant_attributes_fn,
-	get_existing_variants_fn,
-	get_compatibility_mappings_fn,
+		template_bom_name,
+		get_bom_items_fn,
+		get_template_bom_fn,
+		get_item_fn,
+		get_variant_attributes_fn,
+		get_existing_variants_fn,
+		get_compatibility_mappings_fn,
 ):
 	"""
 	Dry-run phase: resolves all existing variants of the root template item
@@ -73,6 +71,7 @@ def run_dry_run(
 			get_existing_variants_fn=get_existing_variants_fn,
 			get_template_bom_fn=get_template_bom_fn,
 			compatibility_map=compatibility_map,
+			template_bom_name=template_bom_name,  # root level exceptions
 		)
 
 		if result['status'] == 'ok':

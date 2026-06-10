@@ -200,7 +200,6 @@ def _commit_sub_assembly_bom(node, overwrite, can_submit):
 		overwrite:   whether to replace an existing BOM
 		can_submit:  whether the current user has BOM submit permission
 	"""
-
 	if node.get('custom_do_not_explode_for_template'):
 		return
 	# --- Recurse into children first (depth-first) ---
@@ -250,6 +249,7 @@ def _commit_sub_assembly_bom(node, overwrite, can_submit):
 
 	if not template_bom:
 		return
+
 	# --- Build and insert the BOM doc ---
 	new_doc = _build_bom_doc(
 		template_bom_name=template_bom,
@@ -258,6 +258,17 @@ def _commit_sub_assembly_bom(node, overwrite, can_submit):
 		children=node.get('children', []),
 	)
 	_insert_and_submit_bom(new_doc, can_submit)
+
+
+# Keys added by the resolver/exception system that must not leak into BOM Item rows
+_RESOLVER_KEYS = frozenset({
+	'resolved_item_code',
+	'resolved_item_name',
+	'children',
+	'is_exception',
+	'exception_name',
+	'exception_replaces',
+})
 
 
 def _build_bom_doc(template_bom_name, resolved_item_code, resolved_item_name, children):
@@ -269,6 +280,10 @@ def _build_bom_doc(template_bom_name, resolved_item_code, resolved_item_name, ch
 	populated from the resolver output so that BOM Attribute Compatibility
 	resolution is respected. ERPNext's native mapping only does direct
 	attribute matching and knows nothing about our compatibility table.
+
+	Exception items (is_exception=True) are written to the BOM exactly like
+	normal items — the flag is stripped before appending so ERPNext never
+	sees it. It exists only for dry-run display purposes.
 
 	Args:
 		template_bom_name:   name of the template BOM to copy header/operations from
@@ -314,11 +329,15 @@ def _build_bom_doc(template_bom_name, resolved_item_code, resolved_item_name, ch
 	# Populate items from resolved children (top level of this node only).
 	# ERPNext explodes non-template sub-assembly BOMs automatically at
 	# Work Order / MRP time — we do not recurse into grandchildren here.
+	# Exception items are included as normal BOM items — the resolver flags
+	# (is_exception, exception_name, exception_replaces) are stripped here
+	# since they are for dry-run display only and are not BOM Item fields.
 	for child in children:
+		clean_child = {k: v for k, v in child.items() if k not in _RESOLVER_KEYS}
 		new_doc.append('items', {
-			**child,
+			**clean_child,
 			'item_code': child.get('resolved_item_code') or child['item_code'],
 			'item_name': child.get('resolved_item_name') or child.get('item_name') or child['item_code'],
 		})
-	return new_doc
 
+	return new_doc

@@ -1,0 +1,97 @@
+{
+ "actions": [],
+ "autoname": "hash",
+ "creation": "2024-01-01 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "template_item",
+  "replace_item",
+  "section_attributes",
+  "exception_attributes",
+  "section_items",
+  "exception_items"
+ ],
+ "fields": [
+  {
+   "description": "The item to remove from the BOM for matching variants. Leave blank for a pure addition.",
+   "fieldname": "replace_item",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Replace Item",
+   "options": "Item"
+  },
+  {
+   "fieldname": "section_attributes",
+   "fieldtype": "Section Break",
+   "label": "Match Attributes"
+  },
+  {
+   "description": "All rows must match (AND logic) for this exception to fire.",
+   "fieldname": "exception_attributes",
+   "fieldtype": "Table",
+   "label": "Exception Attributes",
+   "options": "Template BOM Exception Attribute",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_items",
+   "fieldtype": "Section Break",
+   "label": "Replacement / Addition Items"
+  },
+  {
+   "description": "Parts to add to the BOM when this exception matches. If Replace Item is set, these replace it.",
+   "fieldname": "exception_items",
+   "fieldtype": "Table",
+   "label": "Exception Items",
+   "options": "Template BOM Exception Item",
+   "reqd": 1
+  },
+  {
+   "fieldname": "template_item",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Template Item",
+   "options": "Item",
+   "reqd": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-06-09 16:32:13.623867",
+ "modified_by": "Administrator",
+ "module": "Template Bom Exploder",
+ "name": "Template BOM Exception",
+ "naming_rule": "Random",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Manufacturing Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Manufacturing User",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

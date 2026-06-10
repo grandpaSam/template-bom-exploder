@@ -44,6 +44,7 @@ class TemplateBomExploderPage {
 		this.report = null; // full dry-run report dict
 		this.bom_name = null;
 	}
+
 	init(bom_name) {
 		this.report = null;
 
@@ -69,6 +70,7 @@ class TemplateBomExploderPage {
 		this._bindButtons();
 		this._runDryRun();
 	}
+
 	// -----------------------------------------------------------------------
 	// Data
 	// -----------------------------------------------------------------------
@@ -178,6 +180,11 @@ class TemplateBomExploderPage {
 	}
 
 	_buildTreeNode(node) {
+		// Exception-added items have no template-side item — render differently
+		if (node.is_exception) {
+			return this._buildExceptionNode(node);
+		}
+
 		const hasChildren = node.children && node.children.length > 0;
 
 		const $li = $(`<li class="tbe-node ${hasChildren ? "tbe-node--parent" : ""}"></li>`);
@@ -208,11 +215,11 @@ class TemplateBomExploderPage {
 
 		// Template side
 		const $from = $(`
-			<span class="tbe-node-item tbe-node-item--template">
-				<span class="tbe-item-name">${frappe.utils.escape_html(node.item_name || node.item_code)}</span>
-				<span class="tbe-item-code">(${frappe.utils.escape_html(node.item_code)})</span>
-			</span>
-		`);
+<span class="tbe-node-item tbe-node-item--template">
+<span class="tbe-item-name">${frappe.utils.escape_html(node.item_name || node.item_code)}</span>
+<span class="tbe-item-code">(${frappe.utils.escape_html(node.item_code)})</span>
+</span>
+`);
 
 		// Arrow
 		const $arrow = $(`<span class="tbe-node-arrow">→</span>`);
@@ -220,16 +227,16 @@ class TemplateBomExploderPage {
 		// Resolved side
 		const resolvedName = node.resolved_item_name || node.resolved_item_code;
 		const $to = $(`
-			<span class="tbe-node-item tbe-node-item--resolved">
-				<span class="tbe-item-name">${frappe.utils.escape_html(resolvedName)}</span>
-				<span class="tbe-item-code">(${frappe.utils.escape_html(node.resolved_item_code)})</span>
-			</span>
-		`);
+<span class="tbe-node-item tbe-node-item--resolved">
+<span class="tbe-item-name">${frappe.utils.escape_html(resolvedName)}</span>
+<span class="tbe-item-code">(${frappe.utils.escape_html(node.resolved_item_code)})</span>
+</span>
+`);
 
 		// Qty + UOM badge
 		const $qty = $(`
-			<span class="tbe-node-qty">${node.qty} ${frappe.utils.escape_html(node.uom || "")}</span>
-		`);
+<span class="tbe-node-qty">${node.qty} ${frappe.utils.escape_html(node.uom || "")}</span>
+`);
 
 		$row.append($from, $arrow, $to, $qty);
 		$li.append($row);
@@ -242,6 +249,41 @@ class TemplateBomExploderPage {
 			});
 			$li.append($childList);
 		}
+
+		return $li;
+	}
+
+	_buildExceptionNode(node) {
+		const $li = $(`<li class="tbe-node tbe-node--exception"></li>`);
+		const $row = $(`<div class="tbe-node-row"></div>`);
+
+		// Leaf indicator (exception items are never sub-assemblies in this context)
+		$row.append($(`<span class="tbe-toggle tbe-toggle--leaf">•</span>`));
+
+		// Exception badge
+		const replacesHtml = node.exception_replaces
+			? ` <span class="tbe-exception-replaces">replaces ${frappe.utils.escape_html(node.exception_replaces)}</span>`
+			: ` <span class="tbe-exception-replaces">addition</span>`;
+
+		const $badge = $(`<span class="tbe-exception-badge">EXCEPTION${replacesHtml}</span>`);
+
+		// Resolved item (the new part being added)
+		const resolvedName = node.resolved_item_name || node.resolved_item_code || node.item_code;
+		const resolvedCode = node.resolved_item_code || node.item_code;
+		const $item = $(`
+<span class="tbe-node-item tbe-node-item--resolved">
+<span class="tbe-item-name">${frappe.utils.escape_html(resolvedName)}</span>
+<span class="tbe-item-code">(${frappe.utils.escape_html(resolvedCode)})</span>
+</span>
+`);
+
+		// Qty + UOM badge
+		const $qty = $(`
+<span class="tbe-node-qty">${node.qty} ${frappe.utils.escape_html(node.uom || "")}</span>
+`);
+
+		$row.append($badge, $item, $qty);
+		$li.append($row);
 
 		return $li;
 	}
@@ -310,10 +352,9 @@ class TemplateBomExploderPage {
 		// Confirm All
 		this.$page.on("click", ".tbe-btn-confirm-all", () => {
 			if (!this.report) return;
-			console.log('test')
 			const okVariants = this.report.variants
-				.filter((v) => v.status === "ok")
-				.map((v) => v.variant_item);
+			.filter((v) => v.status === "ok")
+			.map((v) => v.variant_item);
 			this._confirmVariants(okVariants, true);
 		});
 	}
@@ -406,7 +447,7 @@ class TemplateBomExploderPage {
 					this.$footer.find(".tbe-btn-confirm-selected").prop("disabled", true);
 					this.$footer.find(".tbe-btn-confirm-all").prop("disabled", true);
 				},
-			});
+				});
 		});
 	}
 
@@ -435,84 +476,84 @@ class TemplateBomExploderPage {
 const TBE_STYLES = `
 /* ---- Layout ---- */
 .tbe-page {
-	display: flex;
-	flex-direction: column;
-	gap: 0;
-	padding: 0 0 80px 0;
-	min-height: 100%;
+display: flex;
+flex-direction: column;
+gap: 0;
+padding: 0 0 80px 0;
+min-height: 100%;
 }
 
 /* ---- Header ---- */
 .tbe-header {
-	display: flex;
-	align-items: flex-start;
-	justify-content: space-between;
-	flex-wrap: wrap;
-	gap: 12px;
-	padding: 20px 24px 16px;
-	border-bottom: 1px solid var(--border-color);
-	background: var(--card-bg);
+display: flex;
+align-items: flex-start;
+justify-content: space-between;
+flex-wrap: wrap;
+gap: 12px;
+padding: 20px 24px 16px;
+border-bottom: 1px solid var(--border-color);
+background: var(--card-bg);
 }
 
 .tbe-header-left {
-	display: flex;
-	flex-direction: column;
-	gap: 2px;
+display: flex;
+flex-direction: column;
+gap: 2px;
 }
 
 .tbe-title {
-	font-size: 1.25rem;
-	font-weight: 600;
-	color: var(--heading-color);
-	margin: 0;
-	display: flex;
-	align-items: baseline;
-	gap: 6px;
+font-size: 1.25rem;
+font-weight: 600;
+color: var(--heading-color);
+margin: 0;
+display: flex;
+align-items: baseline;
+gap: 6px;
 }
 
 .tbe-title-code {
-	font-size: 0.85rem;
-	font-weight: 400;
-	color: var(--text-muted);
+font-size: 0.85rem;
+font-weight: 400;
+color: var(--text-muted);
 }
 
 .tbe-subtitle {
-	font-size: 0.8rem;
-	color: var(--text-muted);
-	margin: 0;
+font-size: 0.8rem;
+color: var(--text-muted);
+margin: 0;
 }
 
 /* ---- Summary pills ---- */
 .tbe-summary {
-	display: flex;
-	gap: 8px;
-	align-items: center;
+display: flex;
+gap: 8px;
+align-items: center;
 }
 
 .tbe-pill {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	min-width: 56px;
-	padding: 6px 12px;
-	border-radius: 6px;
-	border: 1px solid var(--border-color);
-	background: var(--control-bg);
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+min-width: 56px;
+padding: 6px 12px;
+border-radius: 6px;
+border: 1px solid var(--border-color);
+background: var(--control-bg);
 }
 
 .tbe-pill-count {
-	font-size: 1.1rem;
-	font-weight: 700;
-	line-height: 1;
+font-size: 1.1rem;
+font-weight: 700;
+line-height: 1;
 }
 
 .tbe-pill-label {
-	font-size: 0.65rem;
-	text-transform: uppercase;
-	letter-spacing: 0.05em;
-	color: var(--text-muted);
-	margin-top: 2px;
+font-size: 0.65rem;
+text-transform: uppercase;
+letter-spacing: 0.05em;
+color: var(--text-muted);
+margin-top: 2px;
 }
 
 .tbe-pill--ok   .tbe-pill-count { color: var(--green-500, #28a745); }
@@ -520,274 +561,307 @@ const TBE_STYLES = `
 
 /* ---- Controls ---- */
 .tbe-controls {
-	padding: 14px 24px;
-	border-bottom: 1px solid var(--border-color);
-	background: var(--card-bg);
-	display: flex;
-	align-items: center;
-	gap: 12px;
+padding: 14px 24px;
+border-bottom: 1px solid var(--border-color);
+background: var(--card-bg);
+display: flex;
+align-items: center;
+gap: 12px;
 }
 
 .tbe-select-wrap {
-	display: flex;
-	align-items: center;
-	gap: 8px;
+display: flex;
+align-items: center;
+gap: 8px;
 }
 
 .tbe-select-label {
-	font-size: 0.8rem;
-	font-weight: 500;
-	color: var(--text-muted);
-	white-space: nowrap;
-	margin: 0;
+font-size: 0.8rem;
+font-weight: 500;
+color: var(--text-muted);
+white-space: nowrap;
+margin: 0;
 }
 
 .tbe-controls .form-control {
-	width: 360px;
-	max-width: 100%;
-	font-size: 0.875rem;
+width: 360px;
+max-width: 100%;
+font-size: 0.875rem;
 }
 
 /* ---- Loading ---- */
 .tbe-loading {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	gap: 12px;
-	padding: 60px 24px;
-	color: var(--text-muted);
-	font-size: 0.875rem;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+gap: 12px;
+padding: 60px 24px;
+color: var(--text-muted);
+font-size: 0.875rem;
 }
 
 .tbe-spinner {
-	width: 28px;
-	height: 28px;
-	border: 3px solid var(--border-color);
-	border-top-color: var(--primary);
-	border-radius: 50%;
-	animation: tbe-spin 0.7s linear infinite;
+width: 28px;
+height: 28px;
+border: 3px solid var(--border-color);
+border-top-color: var(--primary);
+border-radius: 50%;
+animation: tbe-spin 0.7s linear infinite;
 }
 
 .tbe-overwrite-wrap {
-    display: flex;
-    align-items: center;
-    margin-left: 16px;
+display: flex;
+align-items: center;
+margin-left: 16px;
 }
 
 .tbe-overwrite-label {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    cursor: pointer;
-    margin: 0;
-    user-select: none;
+display: flex;
+align-items: center;
+gap: 6px;
+font-size: 0.8rem;
+color: var(--text-muted);
+cursor: pointer;
+margin: 0;
+user-select: none;
 }
 
 .tbe-overwrite-checkbox {
-    cursor: pointer;
-    margin: 0;
+cursor: pointer;
+margin: 0;
 }
 
-
 @keyframes tbe-spin {
-	to { transform: rotate(360deg); }
+to { transform: rotate(360deg); }
 }
 
 /* ---- Fatal error ---- */
 .tbe-fatal-error {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	margin: 24px;
-	padding: 14px 18px;
-	background: var(--alert-bg, #fff3cd);
-	border: 1px solid var(--yellow-200, #ffc107);
-	border-radius: 6px;
-	color: var(--text-color);
-	font-size: 0.875rem;
+display: flex;
+align-items: center;
+gap: 10px;
+margin: 24px;
+padding: 14px 18px;
+background: var(--alert-bg, #fff3cd);
+border: 1px solid var(--yellow-200, #ffc107);
+border-radius: 6px;
+color: var(--text-color);
+font-size: 0.875rem;
 }
 
 .tbe-fatal-icon {
-	font-size: 1.1rem;
-	flex-shrink: 0;
+font-size: 1.1rem;
+flex-shrink: 0;
 }
 
 /* ---- Tree panel ---- */
 .tbe-tree-panel {
-	flex: 1;
-	padding: 20px 24px;
-	overflow-y: auto;
+flex: 1;
+padding: 20px 24px;
+overflow-y: auto;
 }
 
 /* ---- Variant error card ---- */
 .tbe-variant-error {
-	margin-bottom: 16px;
+margin-bottom: 16px;
 }
 
 .tbe-error-card {
-	border: 1px solid var(--red-200, #f5c6cb);
-	background: var(--red-50, #fff5f5);
-	border-radius: 6px;
-	padding: 14px 18px;
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
-	font-size: 0.875rem;
+border: 1px solid var(--red-200, #f5c6cb);
+background: var(--red-50, #fff5f5);
+border-radius: 6px;
+padding: 14px 18px;
+display: flex;
+flex-direction: column;
+gap: 6px;
+font-size: 0.875rem;
 }
 
 .tbe-error-card-title {
-	font-weight: 600;
-	color: var(--red-600, #c82333);
-	font-size: 0.9rem;
+font-weight: 600;
+color: var(--red-600, #c82333);
+font-size: 0.9rem;
 }
 
 .tbe-error-card-item {
-	color: var(--text-muted);
-	font-size: 0.8rem;
+color: var(--text-muted);
+font-size: 0.8rem;
 }
 
 .tbe-error-card-reason {
-	color: var(--text-color);
+color: var(--text-color);
 }
 
 .tbe-error-card-candidates {
-	font-size: 0.8rem;
-	color: var(--text-muted);
+font-size: 0.8rem;
+color: var(--text-muted);
 }
 
 .tbe-error-card-candidates-label {
-	font-weight: 500;
-	margin-right: 4px;
+font-weight: 500;
+margin-right: 4px;
 }
 
 /* ---- Tree ---- */
 .tbe-tree,
 .tbe-children {
-	list-style: none;
-	padding: 0;
-	margin: 0;
+list-style: none;
+padding: 0;
+margin: 0;
 }
 
 .tbe-tree--root > .tbe-node {
-	border-bottom: 1px solid var(--border-color);
+border-bottom: 1px solid var(--border-color);
 }
 
 .tbe-node {
-	padding: 0;
+padding: 0;
 }
 
 .tbe-children {
-	padding-left: 32px;
-	border-left: 2px solid var(--border-color);
-	margin-left: 14px;
+padding-left: 32px;
+border-left: 2px solid var(--border-color);
+margin-left: 14px;
 }
 
 .tbe-children > .tbe-node {
-	border-bottom: 1px solid var(--border-color);
+border-bottom: 1px solid var(--border-color);
 }
 
 .tbe-children > .tbe-node:last-child {
-	border-bottom: none;
+border-bottom: none;
 }
 
 .tbe-node-row {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	padding: 8px 4px;
-	min-height: 38px;
+display: flex;
+align-items: center;
+gap: 8px;
+padding: 8px 4px;
+min-height: 38px;
 }
 
 /* ---- Toggle button ---- */
 .tbe-toggle {
-	background: none;
-	border: none;
-	padding: 0;
-	width: 18px;
-	height: 18px;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	font-size: 0.6rem;
-	color: var(--text-muted);
-	cursor: pointer;
-	flex-shrink: 0;
-	transition: color 0.15s;
+background: none;
+border: none;
+padding: 0;
+width: 18px;
+height: 18px;
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 0.6rem;
+color: var(--text-muted);
+cursor: pointer;
+flex-shrink: 0;
+transition: color 0.15s;
 }
 
 .tbe-toggle:hover {
-	color: var(--primary);
+color: var(--primary);
 }
 
 .tbe-toggle--leaf {
-	cursor: default;
-	font-size: 0.5rem;
+cursor: default;
+font-size: 0.5rem;
 }
 
 /* ---- Node items ---- */
 .tbe-node-item {
-	display: inline-flex;
-	align-items: baseline;
-	gap: 4px;
+display: inline-flex;
+align-items: baseline;
+gap: 4px;
 }
 
 .tbe-item-name {
-	font-weight: 500;
-	color: var(--text-color);
-	font-size: 0.875rem;
+font-weight: 500;
+color: var(--text-color);
+font-size: 0.875rem;
 }
 
 .tbe-item-code {
-	font-size: 0.75rem;
-	color: var(--text-muted);
-	font-family: var(--monospace-font, monospace);
+font-size: 0.75rem;
+color: var(--text-muted);
+font-family: var(--monospace-font, monospace);
 }
 
 .tbe-node-item--resolved .tbe-item-name {
-	color: var(--primary);
+color: var(--primary);
 }
 
 .tbe-node-arrow {
-	color: var(--text-muted);
-	font-size: 0.8rem;
-	flex-shrink: 0;
-	padding: 0 2px;
+color: var(--text-muted);
+font-size: 0.8rem;
+flex-shrink: 0;
+padding: 0 2px;
 }
 
 /* ---- Qty badge ---- */
 .tbe-node-qty {
-	margin-left: auto;
-	font-size: 0.75rem;
-	color: var(--text-muted);
-	background: var(--control-bg);
-	border: 1px solid var(--border-color);
-	border-radius: 4px;
-	padding: 1px 7px;
-	white-space: nowrap;
-	flex-shrink: 0;
+margin-left: auto;
+font-size: 0.75rem;
+color: var(--text-muted);
+background: var(--control-bg);
+border: 1px solid var(--border-color);
+border-radius: 4px;
+padding: 1px 7px;
+white-space: nowrap;
+flex-shrink: 0;
+}
+
+/* ---- Exception nodes ---- */
+.tbe-node--exception > .tbe-node-row {
+background: var(--yellow-50, #fffbeb);
+border-left: 3px solid var(--yellow-400, #f59e0b);
+padding-left: 6px;
+margin-left: -3px;
+}
+
+.tbe-exception-badge {
+display: inline-flex;
+align-items: center;
+gap: 5px;
+font-size: 0.65rem;
+font-weight: 700;
+letter-spacing: 0.06em;
+text-transform: uppercase;
+color: var(--yellow-800, #92400e);
+background: var(--yellow-100, #fef3c7);
+border: 1px solid var(--yellow-300, #fcd34d);
+border-radius: 4px;
+padding: 1px 6px;
+white-space: nowrap;
+flex-shrink: 0;
+}
+
+.tbe-exception-replaces {
+font-weight: 400;
+font-size: 0.65rem;
+color: var(--yellow-700, #b45309);
+text-transform: none;
+letter-spacing: 0;
+font-style: italic;
 }
 
 /* ---- Footer ---- */
 .tbe-footer {
-	position: fixed;
-	bottom: 0;
-	left: 0;
-	right: 0;
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	padding: 12px 24px;
-	background: var(--card-bg);
-	border-top: 1px solid var(--border-color);
-	box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
-	z-index: 100;
+position: fixed;
+bottom: 0;
+left: 0;
+right: 0;
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding: 12px 24px;
+background: var(--card-bg);
+border-top: 1px solid var(--border-color);
+box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+z-index: 100;
 }
 
 .tbe-footer-right {
-	display: flex;
-	gap: 8px;
+display: flex;
+gap: 8px;
 }
 `;
