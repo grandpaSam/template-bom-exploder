@@ -151,6 +151,68 @@ def resolve_bom_tree(
 			resolved_items.append({**bom_item, 'resolved_item_code': item_code, 'resolved_item_name': item.get('item_name') or item_code})
 			continue
 
+		# Case: specific variant pinned directly in the BOM — use as-is, no resolution needed.
+		# When the BOM item is already a concrete variant (has variant_of but not has_variants),
+		# the user hardcoded the exact item they want. Skip resolve_item() entirely.
+		if item.get('variant_of') and not item.get('has_variants'):
+			resolved_item_code = item_code
+			resolved_item_name = item.get('item_name') or item_code
+
+			if bom_item.get('custom_do_not_explode_for_template'):
+				resolved_items.append({
+					**bom_item,
+					'resolved_item_code': resolved_item_code,
+					'resolved_item_name': resolved_item_name,
+				})
+				continue
+
+			sub_bom_children = bom_item.get('children', [])
+			if sub_bom_children:
+				template_item = item.get('variant_of')
+				sub_bom = get_template_bom_fn(resolved_item_code) or get_template_bom_fn(template_item)
+
+				if sub_bom:
+					if sub_bom in visited:
+						errors.append({
+							'item_code': resolved_item_code,
+							'reason': f'Circular BOM reference detected for BOM "{sub_bom}"'
+						})
+						continue
+					visited.add(sub_bom)
+					sub_result = resolve_bom_tree(
+						sub_bom_children,
+						target_attributes,
+						get_item_fn,
+						get_variant_attributes_fn,
+						get_existing_variants_fn,
+						get_template_bom_fn,
+						compatibility_map,
+						visited,
+						template_bom_name=sub_bom,
+					)
+					if sub_result['status'] == 'failed':
+						errors.extend(sub_result['errors'])
+						continue
+					resolved_items.append({
+						**bom_item,
+						'resolved_item_code': resolved_item_code,
+						'resolved_item_name': resolved_item_name,
+						'children': sub_result['resolved_items'],
+					})
+				else:
+					resolved_items.append({
+						**bom_item,
+						'resolved_item_code': resolved_item_code,
+						'resolved_item_name': resolved_item_name,
+					})
+			else:
+				resolved_items.append({
+					**bom_item,
+					'resolved_item_code': resolved_item_code,
+					'resolved_item_name': resolved_item_name,
+				})
+			continue
+
 		# Circular reference guard
 		if item_code in visited:
 			errors.append({
